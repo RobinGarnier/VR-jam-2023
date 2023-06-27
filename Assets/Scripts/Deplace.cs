@@ -7,36 +7,43 @@ public class Deplace : MonoBehaviour
     UnityEngine.AI.NavMeshAgent agent;
 
     [Header("Car RoadBook")]
-    public Vector3 trajetA = Vector3.zero;[Tooltip("Pas touche")]
+    [Tooltip("Pas touche")]public Vector3 trajetA = Vector3.zero;
     Vector3 trajetB = Vector3.zero;
+    [Tooltip("Pas touche")] public bool tripFinished;
 
     [Header("Nav Proporties")]
-    public GameObject destination; [Tooltip("Gameobject which have the transform of the final destination")]
-    public bool launched;[Tooltip("Start the navigation with it")]
+    [Tooltip("Pas touche : List of Gameobject which have the transform of the potential final destination of the step(lenght=nb of children in drivable roads)")]public GameObject[] destinationsPossible;
+    [Tooltip("number of different destination needed to bereach before the end")] public float nbEtape;
+    [Tooltip("Pas touche : return all the destination needed to be reach")] public List<GameObject> destinationGlobal = new List<GameObject>();
+    [Tooltip("Pas touche : return of the current destination")] public GameObject destination;
+    [Tooltip("Start the navigation with it")]public bool launched;
 
-    [Header("Car Moving Parameter")]
-    Vector3 position = Vector3.zero;
-    Vector3 positionPresent = Vector3.zero;
-    Vector3 positionPasse = Vector3.zero;
-    Vector3 rot = Vector3.zero;
-    float rotSpeed = 40f;
-    Vector3 direction = Vector3.zero;
-    float moveSpeed = 1.5f;
-    GameObject car;
 
-    
-
-    // Start is called before the first frame update
     void Awake()
     {
-        car = gameObject;
         agent = gameObject.GetComponent<UnityEngine.AI.NavMeshAgent>();
 
-        gameObject.transform.eulerAngles = rot;
-        gameObject.transform.position = positionPasse;
+        destinationsPossible = GameObject.FindGameObjectsWithTag("drivable roads");
+
+        List<GameObject> resteDestinationPossible = new List<GameObject>();
+        foreach(GameObject obj in destinationsPossible)
+        {
+            resteDestinationPossible.Add(obj);
+        }
+
+        int indexRandom; 
+        for (int i = 0; i < nbEtape; i++)
+        {
+            indexRandom = Random.Range(0, resteDestinationPossible.Count);
+            destinationGlobal.Add(resteDestinationPossible[indexRandom]);
+            resteDestinationPossible.RemoveAt(indexRandom);
+        }
+
+        destination.transform.position = destinationGlobal[0].transform.position;
+        SetPosition(destination);
     }
 
-    // Update is called once per frame
+
     void Update()
     {
         agent.SetDestination(trajetA);
@@ -45,5 +52,26 @@ public class Deplace : MonoBehaviour
         {
             { trajetA = destination.transform.position; }
         }
+
+        //if ((transform.position.x - 0.1<= destination.transform.position.x || destination.transform.position.x <= transform.position.x+0.1) && (destination.transform.position.z-0.1<= transform.position.z || transform.position.z <= destination.transform.position.z+ 0.1))
+        if (transform.position.x== destination.transform.position.x && destination.transform.position.x == transform.position.x)
+        {
+            try 
+            {
+                destinationGlobal.RemoveAt(0);
+                destination.transform.position = destinationGlobal[0].transform.position;
+                SetPosition(destination);
+            }
+            catch
+            {
+                tripFinished = true;
+            }
+        }
     }
+
+    void SetPosition(GameObject destination)
+    {
+        destination.transform.position = new Vector3(destination.transform.position.x, 25 , destination.transform.position.z);
+    }
+
 }
